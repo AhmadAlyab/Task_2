@@ -3,14 +3,12 @@
 namespace App\Http\Traits;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 trait UploadfileTrait
 {
-    public function uploadFile(Request $request)
+    public function uploadFile($request)
     {
-        $profilePhotoPath = null;
-        if ($request->hasFile('profil_photo')) {
-            $profilePhotoPath = $request->file('profil_photo')->store('profile_photos', 'public');
-        }
+        Storage::put('public/images/',$request['profil_photo']);
     }
 }

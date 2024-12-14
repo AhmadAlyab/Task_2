@@ -67,22 +67,12 @@ class AuthController extends Controller
         {
             return $this->ApiResponse(['errors' => $validator->errors()],422);
         }
-        // save file in disk
-        $profilPhoto = $this->uploadFile($request);
-        // save info in table user
-        $user = User::create([
-            'full_name' => $request->full_name,
-            'email' => $request->email,
-            'number_phone' => $request->number_phone,
-            'password' => bcrypt($request->password),
-            'profil_photo' => $profilPhoto,
-        ]);
 
          // make code for verification and cache storage
          $ip = $request->ip();
          $verificationCode = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6);
 
-         Cache::put('email_verification:'.$user->email,[
+         Cache::put('email_verification:'.$request->email,[
             'code' => $verificationCode,
             'ip'   => $ip,
          ],now()->addMinutes(10));
@@ -90,8 +80,17 @@ class AuthController extends Controller
         // send code in email
         $subject = "Email Verification Code";
         $body = "Your verification code is: $verificationCode";
-        Mail::to($user->email)->send(new Send($subject,$body));
+        Mail::to($request->email)->send(new Send($subject,$body));
 
+        $image = $request->file('profil_photo');
+        Cache::put('request: '.$request->email,[
+            'full_name' => $request->full_name,
+            'email'     => $request->email,
+            'number_phone' => $request->number_phone,
+            'password'   => $request->password,
+            'profil_photo' => file_get_contents($image),
+            'image_name' => $image->getClientOriginalName(),
+        ],now()->addMinutes(10));
         // sevd email to user
         return $this->ApiResponse(['message' => 'User registered successfully. Please check your email for the verification code.']);
 
@@ -120,6 +119,21 @@ class AuthController extends Controller
         }
         // delete data from cache storage
         Cache::forget('email_verification:'.$request->email);
+
+        // get info user to save it
+        $Request = Cache::get('request: '.$request->email);
+
+        // save file in disk
+        $profilPhoto = $this->uploadFile($Request);
+
+        // save info in table user
+        $user = User::create([
+            'full_name' => $Request['full_name'],
+            'email' => $Request['email'],
+            'number_phone' => $Request['number_phone'],
+            'password' => bcrypt($Request['password']),
+            'profil_photo' => $Request['image_name'],
+        ]);
 
         // get user
         $user = User::where('email',$request->email)->first();
