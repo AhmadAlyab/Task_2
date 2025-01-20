@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
+use Laravel\Sanctum\PersonalAccessToken;
+use Carbon\Carbon;
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,5 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })->withSchedule(function(Schedule $schedule) {
+        $schedule->call(function () {
+            PersonalAccessToken::where('created_at', '<', Carbon::now()->subDays(3))->delete();
+        })->daily();
+    })
+    ->create();
 
