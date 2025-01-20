@@ -19,17 +19,28 @@ class Verify2FAController extends Controller
 
     public function verifyTwoFactorAuthentication(Request $request)
     {
+        // create secret from Google2FA
         $google2fa = new Google2FA();
         $valid = $google2fa->verifyKey(Cache::get("secret".$request->email),
                  $request->secret);
 
         if ($valid) {
+            // get user from cache memory
+            $user = Cache::get('user:'.$request->email);
+            // create access token for 10 min
+            $token = $user->createToken('access_token', ['*'], now()->addMinutes(10))->plainTextToken;
+
+            $this->Cache('token:'.$user->id,$token,10);
+
             return $this->ApiResponse([
                 'massege' => 'login successful',
+                'access_token' => $token,
+                'user' => $user,
             ],500);
+
         } else {
             return $this->ApiResponse([
-                'massege' => 'the QR code is not correct',
+                'massege' => 'the code is not correct',
             ],404);
         }
     }

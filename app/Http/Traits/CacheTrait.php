@@ -24,7 +24,7 @@ trait CacheTrait
 
         Cache::put("secret".$email,$secret,now()->addMinutes(10));
 
-        Mail::to($email)->send(new Send("QR CODE","the QR code is".$secret));
+        Mail::to($email)->send(new Send("secret","the secret is".$secret));
 
     }
 

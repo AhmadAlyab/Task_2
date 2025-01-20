@@ -31,15 +31,10 @@ class LoginController extends Controller
         // create QR code to 2FA
         $this->TowFactorAuthentication($user->email);
 
-        // create access token for 10 min
-        $token = $user->createToken('access_token', ['*'], now()->addMinutes(10))->plainTextToken;
-
-        $this->Cache('token:'.$user->id,$token,10);
+        $this->Cache('user:'.$user->email,$user,10);
 
         return $this->ApiResponse([
-            'massege' => 'login successful',
-            'access_token' => $token,
-            'user' => $user,
+            'massege' => 'check your email and write secret',
         ]);
 
     }
